@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TODO</title>
+  <link rel="stylesheet" href="./css/19-todo.css" />
+</head>
+
+<body>
+  <div id="app">
+    <div class="wait">
+      <ul>
+        <li v-for="(item, idx) in todoWait.content" :key="item.url" @click="handlePuzzle(item, idx)">
+          <img :src="item.url" alt="" />
+        </li>
+      </ul>
+    </div>
+    <div class="carried">
+      <ul>
+        <li v-for="(item, idx) in todoMove.content" :key="item.url" @click="movePuzzle(item, idx)">
+          <img :src="item.url" alt="" />
+        </li>
+      </ul>
+    </div>
+    <div :class="['winPage', {open: isWin}]">
+      <h1>闖關成功</h1>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.20.0/axios.min.js"></script>
+  <script src="./js/vue.js"></script>
+  <script>
+    const { reactive, onMounted, watch, ref } = Vue;
+    const app = {
+      setup() {
+        const todoWait = reactive({ content: [] });
+        const todoMove = reactive({ content: [] });
+        const winIdx = ref(0);
+        const isWin = ref(false);
+
+        watch(
+          () => todoMove.content,
+          (newArr) => {
+            winIdx.value = 0;
+            newArr.forEach((item, idx) => {
+              if (item.idx === idx) {
+                winIdx.value++;
+                // console.log(winIdx.value);
+              }
+            })
+          },
+          { deep: true }
+        )
+        watch(winIdx, (newVal) => {
+          if (newVal === 9) {
+            isWin.value = true;
+          }
+        })
+
+
+
+        const handlePuzzle = (item, idx) => {
+          todoMove.content.push(item);
+          todoWait.content.splice(idx, 1);
+        }
+
+        const movePuzzle = (item, idx) => {
+          todoWait.content.push(item);
+          todoMove.content.splice(idx, 1);
+        }
+
+        onMounted(() => {
+          axios
+            .get('./api/puzzle.json')
+            .then((res) => {
+              todoWait.content = res.data;
+              console.log(todoWait.content);
+            })
+        })
+        return { todoWait, todoMove, handlePuzzle, movePuzzle, winIdx, isWin };
+      },
+    };
+    Vue.createApp(app).mount("#app");
+  </script>
+</body>
+
+</html>
